@@ -19,7 +19,7 @@ jobs:
           php-version: '8.3'
 
       - name: Install dependencies
-        run: composer install
+        run: composer install --no-interaction --prefer-dist --ignore-platform-reqs
 
       - name: Run tests
         run: ./vendor/bin/phpunit tests
@@ -38,7 +38,7 @@ jobs:
           php-version: '8.3'
 
       - name: Install dependencies
-        run: composer install
+        run: composer install --no-interaction --prefer-dist
 
       - name: Deploy to server
         env:
@@ -51,19 +51,15 @@ jobs:
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-          # Create deploy path if it doesn't exist
           ssh -o StrictHostKeyChecking=no $USERNAME@$HOST "mkdir -p $DEPLOY_PATH"
 
-          # Sync files to server
           rsync -avz --delete --no-t \
             --exclude 'tests' \
             --exclude '.git' \
             . $USERNAME@$HOST:$DEPLOY_PATH
 
-          # Install dependencies on server
           ssh -o StrictHostKeyChecking=no $USERNAME@$HOST \
             "cd $DEPLOY_PATH && composer install --no-dev --optimize-autoloader"
 
-          # Restart Apache
           ssh -o StrictHostKeyChecking=no $USERNAME@$HOST \
             "sudo systemctl restart apache2"
